@@ -41,6 +41,7 @@ func run() error {
 	mux.HandleFunc("/hello", makeHandler("Hello, world!"))
 	mux.HandleFunc("/goodbye", makeHandler("Goodbye, world!"))
 	// apply the timingMiddleware to all requests
+	// note how we create the verboten middleware.
 	chain := alice.New(timingMiddleware, makeVerbotenMiddleware("/")).Then(mux)
 	err := http.ListenAndServe(":8080", chain)
 	if err != nil && err != http.ErrServerClosed {
