@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -38,7 +39,7 @@ func run() error {
 	mux.HandleFunc("/goodbye", makeHandler("Goodbye, world!"))
 	// apply the timingMiddleware to all requests
 	err := http.ListenAndServe(":8080", timingMiddleware(verbotenMiddleware("/", mux)))
-	if err != nil && err != http.ErrServerClosed {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("http.ListenAndServe")
 	}
 	return nil
