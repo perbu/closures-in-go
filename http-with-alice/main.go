@@ -35,6 +35,13 @@ func makeVerbotenMiddleware(verboten string) func(http.Handler) http.Handler {
 		})
 	}
 }
+func loggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t0 := time.Now()
+		next.ServeHTTP(w, r)
+		slog.Info("Request served", "duration", time.Since(t0))
+	})
+}
 
 func run() error {
 	mux := http.NewServeMux()
