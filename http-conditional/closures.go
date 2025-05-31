@@ -13,39 +13,49 @@ import (
 // ConditionalMiddleware is a function that returns a middleware function
 // that applies to everything but the paths in the skipPaths list
 func ConditionalMiddleware(skipPaths []string, validatorMiddleware func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	slog.Info("ConditionalMiddleware outer created")
 	return func(next http.Handler) http.Handler {
+		slog.Info("ConditionalMiddleware inner created")
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			for _, path := range skipPaths { // Check if the request path is in the list of paths to skip
 				if r.URL.Path == path {
+					slog.Info("ConditionalMiddleware skipping path", "path", path)
 					next.ServeHTTP(w, r) // If it matches, bypass the validation middleware and serve the request directly
 					return
 				}
 			}
-			validatedHandler := validatorMiddleware(next) // If the path is not in the skip list, apply the validation middleware
+			slog.Info("ConditionalMiddleware validating path", "path", r.URL.Path)
+			validatedHandler := validatorMiddleware(next) // We could move this one layer out perhaps.
 			validatedHandler.ServeHTTP(w, r)
 		})
 	}
 }
 
-// how to inject a dependency into a function
 func makeHandler(greeting string) http.HandlerFunc {
+	slog.Info("makeHandler", "greeting", greeting)
 	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("handler invoked", "greeting", greeting, "path", r.URL.Path)
 		_, _ = fmt.Fprintf(w, "%s", greeting)
 	}
 }
 
 func authMiddleware(next http.Handler) http.Handler {
+	slog.Info("authMiddleware created")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if v := r.Header.Get("Allowed"); strings.EqualFold(v, "true") {
+			slog.Info("authMiddleware invoked", "verdict", "allowed")
 			next.ServeHTTP(w, r)
 			return
 		}
+		slog.Info("authMiddleware invoked", "verdict", "denied")
+		w.Header().Set("content-type", "text/plain; charset=utf-8")
 		w.WriteHeader(http.StatusUnauthorized)
 		_, _ = w.Write([]byte("unauthorized\n"))
 	})
 }
 
 func loggingMiddleware(next http.Handler) http.Handler {
+	slog.Info("loggingMiddleware created")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t0 := time.Now()
 		next.ServeHTTP(w, r)
