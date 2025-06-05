@@ -39,7 +39,6 @@ func (h *ConditionalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // copy slice into a set for constant-time look-ups
-
 func makeHandler(greeting string) http.HandlerFunc {
 	slog.Info("makeHandler", "greeting", greeting)
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -77,12 +76,11 @@ func run() error {
 	mux.HandleFunc("/hello", makeHandler("Hello, world!"))
 	mux.HandleFunc("/skip", makeHandler("We're skipping auth!"))
 
-	wrapped := NewConditionalHandler([]string{"/skip"},
+	handler := NewConditionalHandler([]string{"/skip"},
 		authMiddleware,
 		loggingMiddleware(mux))
-
-	wrapped.ServeHTTP(nil, nil)
-	log.Fatal(http.ListenAndServe(":8080", wrapped))
+	log.Println("listening on port 8080")
+	log.Fatal(http.ListenAndServe(":8080", handler))
 	return nil
 }
 

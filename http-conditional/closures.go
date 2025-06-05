@@ -16,6 +16,7 @@ func ConditionalMiddleware(skipPaths []string, validatorMiddleware func(http.Han
 	slog.Info("ConditionalMiddleware outer created")
 	return func(next http.Handler) http.Handler {
 		slog.Info("ConditionalMiddleware inner created")
+		validatedHandler := validatorMiddleware(next) // premade middleware.
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			for _, path := range skipPaths { // Check if the request path is in the list of paths to skip
 				if r.URL.Path == path {
@@ -25,7 +26,6 @@ func ConditionalMiddleware(skipPaths []string, validatorMiddleware func(http.Han
 				}
 			}
 			slog.Info("ConditionalMiddleware validating path", "path", r.URL.Path)
-			validatedHandler := validatorMiddleware(next) // We could move this one layer out perhaps.
 			validatedHandler.ServeHTTP(w, r)
 		})
 	}
